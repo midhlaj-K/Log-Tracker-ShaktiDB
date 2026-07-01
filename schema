@@ -1,0 +1,28 @@
+user: 
+	uid (int, primary)
+	username (varchar 10, unique, not null)
+	role (varchar 5, not null)
+	join (datetime)
+	groupid (>> group(gid))
+	
+group:
+	gid (int, primary)
+	admin (>> user(uid))
+	
+log:
+	lid (int, primary)
+	time (datetime)
+	by (>> user(uid))
+	actiontype (varchar 10)
+	details (jsonb)
+
+directory:
+	did (int ,primary)
+	path (varchar 100)
+	owner (>> user(uid))
+	parent (>> did) 
+
+file:
+	fid (int, primary)
+	owner (>> user(uid))
+	location (>> directory(path))
