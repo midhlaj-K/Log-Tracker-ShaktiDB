@@ -5,7 +5,7 @@ user:
 	join (datetime)
 	groupid (>> group(gid))
 	
-acces_group:
+access_group:
 	gid (int, primary)
 	admin (>> user(uid))
 	
