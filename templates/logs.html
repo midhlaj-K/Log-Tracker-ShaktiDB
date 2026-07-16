@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0">
+
+<title>Logs | Log Tracker</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet">
+
+<style>
+
+body{
+
+    background:#f4f4f4;
+
+    font-family:Arial, Helvetica, sans-serif;
+
+}
+
+.navbar{
+
+    background:#212529;
+
+    border-bottom:1px solid #444;
+
+}
+
+.navbar-brand,
+.navbar-text{
+
+    color:white !important;
+
+}
+
+.sidebar{
+
+    background:white;
+
+    min-height:100vh;
+
+    border-right:1px solid #cfcfcf;
+
+    padding-top:20px;
+
+}
+
+.sidebar a{
+
+    display:block;
+
+    padding:12px 20px;
+
+    color:#333;
+
+    text-decoration:none;
+
+    border-bottom:1px solid #efefef;
+
+}
+
+.sidebar a:hover{
+
+    background:#ececec;
+
+}
+
+.content{
+
+    padding:30px;
+
+}
+
+.card{
+
+    border-radius:0;
+
+    border:1px solid #cfcfcf;
+
+}
+
+.card-header{
+
+    background:white;
+
+    border-bottom:1px solid #cfcfcf;
+
+    font-weight:bold;
+
+}
+
+.btn,
+.form-control,
+.form-select,
+.alert,
+.modal-content{
+
+    border-radius:0;
+
+}
+
+.table thead{
+
+    background:#efefef;
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<nav class="navbar navbar-expand-lg">
+
+<div class="container-fluid">
+
+<a class="navbar-brand"
+   href="{{ url_for('dashboard') }}">
+
+Log Tracker
+
+</a>
+
+<div class="ms-auto navbar-text">
+
+{{ session['username'] }}
+
+|
+
+{{ session['role'] }}
+
+</div>
+
+</div>
+
+</nav>
+
+<div class="container-fluid">
+
+<div class="row">
+
+<div class="col-md-2 sidebar">
+
+<a href="{{ url_for('dashboard') }}">
+Dashboard
+</a>
+
+<a href="{{ url_for('files') }}">
+Files
+</a>
+
+<a href="{{ url_for('logs') }}">
+Logs
+</a>
+
+{% if session['role'] in ['admin','root'] %}
+
+<a href="{{ url_for('users') }}">
+Users
+</a>
+
+{% endif %}
+
+<a href="{{ url_for('logout') }}">
+Logout
+</a>
+
+</div>
+
+<div class="col-md-10 content">
+
+<h3 class="mb-4">
+
+System Logs
+
+</h3>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+{% for category,message in messages %}
+
+<div class="alert alert-{{ category }}">
+
+{{ message }}
+
+</div>
+
+{% endfor %}
+{% endif %}
+{% endwith %}
+
+<div class="card mb-4">
+
+<div class="card-header">
+
+Search & Filter Logs
+
+</div>
+
+<div class="card-body">
+
+<form method="GET"
+      action="{{ url_for('logs') }}">
+
+<div class="row g-3">
+
+<div class="col-md-3">
+
+<input
+type="text"
+name="username"
+class="form-control"
+placeholder="Username"
+value="{{ request.args.get('username','') }}">
+
+</div>
+
+<div class="col-md-3">
+
+<select
+class="form-select"
+name="action">
+
+<option value="">All Actions</option>
+
+<option value="login">Login</option>
+
+<option value="logout">Logout</option>
+
+<option value="created">Created</option>
+
+<option value="updated">Updated</option>
+
+<option value="renamed">Renamed</option>
+
+<option value="deleted">Deleted</option>
+
+<option value="viewlog">View Log</option>
+
+<option value="adduser">Add User</option>
+
+<option value="removeuser">Remove User</option>
+
+<option value="addadmin">Add Admin</option>
+
+<option value="removeadmin">Remove Admin</option>
+
+</select>
+
+</div>
+
+<div class="col-md-2">
+
+<input
+type="date"
+class="form-control"
+name="start_date">
+
+</div>
+
+<div class="col-md-2">
+
+<input
+type="date"
+class="form-control"
+name="end_date">
+
+</div>
+
+<div class="col-md-2">
+
+<button
+class="btn btn-dark w-100"
+type="submit">
+
+Search
+
+</button>
+
+</div>
+
+</div>
+
+</form>
+
+</div>
+
+</div>
+
+<div class="card">
+
+<div class="card-header">
+
+Audit Log Entries
+
+</div>
+
+<div class="table-responsive">
+
+<table class="table table-bordered table-hover align-middle">
+
+<thead>
+
+<tr>
+
+<th>ID</th>
+
+<th>Time</th>
+
+<th>User</th>
+
+<th>Role</th>
+
+<th>Action</th>
+
+<th>Target</th>
+
+<th width="120">
+
+Details
+
+</th>
+
+</tr>
+
+</thead>
+
+<tbody>
+
+{% for log in logs %}
+
+<tr>
+
+<td>
+
+{{ log.lid }}
+
+</td>
+
+<td>
+
+{{ log.logged_at }}
+
+</td>
+
+<td>
+
+{{ log.username }}
+
+</td>
+
+<td>
+
+{{ log.role }}
+
+</td>
+
+<td>
+
+{{ log.action_type }}
+
+</td>
+
+<td>
+
+{{ log.target_type }}
+
+</td>
+
+<td>
+
+<button
+
+type="button"
+
+class="btn btn-sm btn-secondary"
+
+data-bs-toggle="modal"
+
+data-bs-target="#detailsModal"
+
+data-lid="{{ log.lid }}"
+
+data-user="{{ log.username }}"
+
+data-action="{{ log.action_type }}"
+
+data-time="{{ log.logged_at }}"
+
+data-details='{{ log.details | tojson | safe }}'>
+
+View
+
+</button>
+
+</td>
+
+</tr>
+
+{% endfor %}
+
+{% if logs|length == 0 %}
+
+<tr>
+
+<td colspan="7" class="text-center">
+
+No log entries found.
+
+</td>
+
+</tr>
+
+{% endif %}
+
+</tbody>
+
+</table>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+<!-- ========================= -->
+
+<!-- Log Details Modal -->
+
+<!-- ========================= -->
+
+<div
+
+class="modal fade"
+
+id="detailsModal"
+
+tabindex="-1">
+
+<div class="modal-dialog modal-lg">
+
+<div class="modal-content">
+
+<div class="modal-header">
+
+<h5 class="modal-title">
+
+Log Details
+
+</h5>
+
+<button
+
+type="button"
+
+class="btn-close"
+
+data-bs-dismiss="modal">
+
+</button>
+
+</div>
+
+<div class="modal-body">
+
+<div class="row mb-3">
+
+<div class="col-md-6">
+
+<label class="form-label">
+
+Log ID
+
+</label>
+
+<input
+
+type="text"
+
+class="form-control"
+
+id="modal_lid"
+
+readonly>
+
+</div>
+
+<div class="col-md-6">
+
+<label class="form-label">
+
+User
+
+</label>
+
+<input
+
+type="text"
+
+class="form-control"
+
+id="modal_user"
+
+readonly>
+
+</div>
+
+</div>
+
+<div class="row mb-3">
+
+<div class="col-md-6">
+
+<label class="form-label">
+
+Action
+
+</label>
+
+<input
+
+type="text"
+
+class="form-control"
+
+id="modal_action"
+
+readonly>
+
+</div>
+
+<div class="col-md-6">
+
+<label class="form-label">
+
+Time
+
+</label>
+
+<input
+
+type="text"
+
+class="form-control"
+
+id="modal_time"
+
+readonly>
+
+</div>
+
+</div>
+
+<div class="mb-3">
+
+<label class="form-label">
+
+JSON Details
+
+</label>
+
+<textarea
+
+class="form-control"
+
+id="modal_details"
+
+rows="12"
+
+readonly>
+
+</textarea>
+
+</div>
+
+</div>
+
+<div class="modal-footer">
+
+<button
+
+type="button"
+
+class="btn btn-secondary"
+
+data-bs-dismiss="modal">
+
+Close
+
+</button>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+<!-- ========================= -->
+<!-- Pagination -->
+<!-- ========================= -->
+
+<div class="container-fluid mt-3">
+
+<div class="row">
+
+<div class="col-md-6">
+
+<p>
+
+Showing
+
+<strong>
+
+{{ logs|length }}
+
+</strong>
+
+log entries
+
+</p>
+
+</div>
+
+<div class="col-md-6">
+
+<nav class="float-end">
+
+<ul class="pagination mb-0">
+
+{% if page > 1 %}
+
+<li class="page-item">
+
+<a class="page-link"
+
+href="{{ url_for('logs', page=page-1) }}">
+
+Previous
+
+</a>
+
+</li>
+
+{% endif %}
+
+<li class="page-item active">
+
+<span class="page-link">
+
+{{ page }}
+
+</span>
+
+</li>
+
+{% if has_next %}
+
+<li class="page-item">
+
+<a class="page-link"
+
+href="{{ url_for('logs', page=page+1) }}">
+
+Next
+
+</a>
+
+</li>
+
+{% endif %}
+
+</ul>
+
+</nav>
+
+</div>
+
+</div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+
+/* ============================= */
+/* Populate Log Details Modal */
+/* ============================= */
+
+const detailsModal = document.getElementById('detailsModal');
+
+detailsModal.addEventListener('show.bs.modal', function(event){
+
+    const button = event.relatedTarget;
+
+    document.getElementById('modal_lid').value =
+        button.getAttribute('data-lid');
+
+    document.getElementById('modal_user').value =
+        button.getAttribute('data-user');
+
+    document.getElementById('modal_action').value =
+        button.getAttribute('data-action');
+
+    document.getElementById('modal_time').value =
+        button.getAttribute('data-time');
+
+    const jsonData =
+        button.getAttribute('data-details');
+
+    try{
+
+        const parsed =
+            JSON.parse(jsonData);
+
+        document.getElementById('modal_details').value =
+            JSON.stringify(parsed, null, 4);
+
+    }
+
+    catch(error){
+
+        document.getElementById('modal_details').value =
+            jsonData;
+
+    }
+
+});
+
+</script>
+
+</body>
+
+</html>
