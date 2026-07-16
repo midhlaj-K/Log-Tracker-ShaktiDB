@@ -1,0 +1,5 @@
+Flask
+psycopg[binary]
+passlib[bcrypt]
+bcrypt
+python-dotenv
